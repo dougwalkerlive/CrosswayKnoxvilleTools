@@ -6,33 +6,52 @@
 
 void Main()
 {
-	var web = new WebClient();
-	var baseAddress = @"http://www.crosswayknoxville.org/site/audiodownloads.asp?sec_id=180013269";
-
+	var baseUrl = @"http://www.crosswayknoxville.org";
+	var sermonPageUrl = $@"{baseUrl}/site/audiodownloads.asp?sec_id=180013269";
+	var startPage = 15;
+	var endPage = 16;
 	
-	for (var page = 1; page <=1; page++)
+	var allSermons = new List<Sermon>();
+	
+	for (var page = startPage; page <= endPage; page++)
 	{
 		var index = (page - 1) * 30;
-		var address = $"{baseAddress}";
+		var address = $"{sermonPageUrl}";
 		if (index > 0)
-			address = $"{baseAddress}&index={index}";
+			address = $"{sermonPageUrl}&index={index}";
 			
-		var html = web.DownloadString(address);
-		var htmlDoc = new HtmlAgilityPack.HtmlDocument();
-		htmlDoc.LoadHtml(html);
-		htmlDoc.DocumentNode.SelectNodes("//div").Count.Dump("Number of Divs");
+		var htmlDoc = GetPage(address);
 		var sermons = htmlDoc.DocumentNode.SelectNodes("//div")
 			.Where(node => node.HasClass("file-item"))
-			.Select(node => new {
+			.Select(node => new Sermon {
 				Title = node.GetTitle(),
 				Date = node.GetDate(),
 				Speaker = node.GetSpeaker(),
 				Text = node.GetScriptureReference(),
-				Mp3Url = node.NextSibling.Descendants("a").FirstOrDefault(a => a.HasClass("dlLink color9-font btn"))?.Attributes.FirstOrDefault(att => att.Name == "href")?.Value?.TrimHtml()
+				Mp3Url = node.GetMp3Url(baseUrl)
 			});
-		
-		sermons.Dump();		
-	} 
+
+		sermons.Dump($"Page {page}");
+		allSermons.AddRange(sermons);
+	}
+}
+
+HtmlDocument GetPage(string url) 
+{
+	var webClient = new WebClient();
+	var html = webClient.DownloadString(url);
+	var htmlDoc = new HtmlAgilityPack.HtmlDocument();
+	htmlDoc.LoadHtml(html);
+	return htmlDoc;
+}
+
+public class Sermon
+{
+	public string Title { get; set; }
+	public string Speaker { get; set; }
+	public DateTime? Date { get; set; }
+	public string Text { get; set; }
+	public string Mp3Url { get; set; }
 }
 
 public static class ExtensionMethods 
@@ -89,5 +108,23 @@ public static class ExtensionMethods
 			.FirstOrDefault(span => span.HasClass("mp3_text"))
 			?.InnerText
 			?.TrimHtml();
+	}
+	
+	public static string GetMp3Url(this HtmlNode sermonNode, string baseUrl)
+	{
+		var parsedUrl = sermonNode
+			.NextSibling	// Text node (that contains only whitespace)
+			.NextSibling	// Div that contains the download stuff
+			.Descendants("a")
+			.FirstOrDefault(a => a.HasClass("dlLink"))
+			.Attributes["href"]
+			.Value;
+		
+		if (parsedUrl == null) return null;
+
+		if (parsedUrl.StartsWith("/"))
+			parsedUrl = $"{baseUrl}{parsedUrl}";
+			
+		return parsedUrl;
 	}
 }
