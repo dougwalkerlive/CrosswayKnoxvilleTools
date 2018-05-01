@@ -21,8 +21,7 @@ void Main()
 			address = $"{sermonPageUrl}&index={index}";
 			
 		var htmlDoc = GetPage(address);
-		var sermons = htmlDoc.DocumentNode.SelectNodes("//div")
-			.Where(node => node.HasClass("file-item"))
+		var sermons = htmlDoc.GetSermonNodes()
 			.Select(node => new Sermon {
 				Title = node.GetTitle(),
 				Date = node.GetDate(),
@@ -31,18 +30,20 @@ void Main()
 				Mp3Url = node.GetMp3Url(baseUrl)
 			});
 
-		sermons.Dump($"Page {page}");
+		sermons.Dump($"Page {page}: {address}");
 		allSermons.AddRange(sermons);
 	}
 }
 
 HtmlDocument GetPage(string url) 
 {
-	var webClient = new WebClient();
-	var html = webClient.DownloadString(url);
-	var htmlDoc = new HtmlAgilityPack.HtmlDocument();
-	htmlDoc.LoadHtml(html);
-	return htmlDoc;
+	using (var webClient = new WebClient())
+	{
+		var html = webClient.DownloadString(url);
+		var htmlDoc = new HtmlAgilityPack.HtmlDocument();
+		htmlDoc.LoadHtml(html);
+		return htmlDoc;
+	}
 }
 
 public class Sermon
@@ -63,6 +64,12 @@ public static class ExtensionMethods
 		if (htmlText == null) return null;
 		var cleanText = Regex.Replace(htmlText, "&nbsp;", " ", RegexOptions.IgnoreCase)?.Trim();
 		return cleanText;
+	}
+	
+	public static IEnumerable<HtmlNode> GetSermonNodes(this HtmlDocument htmlDoc)
+	{
+		return htmlDoc.DocumentNode.SelectNodes("//div")
+			.Where(node => node.HasClass("file-item"));
 	}
 	
 	// Given the sermon node in the html, find and extract the title
