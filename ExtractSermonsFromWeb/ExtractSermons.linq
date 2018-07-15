@@ -1,38 +1,49 @@
 <Query Kind="Program">
   <NuGetReference>HtmlAgilityPack</NuGetReference>
+  <NuGetReference>Newtonsoft.Json</NuGetReference>
   <Namespace>HtmlAgilityPack</Namespace>
+  <Namespace>Newtonsoft.Json.Serialization</Namespace>
   <Namespace>System.Net</Namespace>
 </Query>
 
+public string BaseUrl { get; set; } = @"http://www.crosswayknoxville.org";
 void Main()
 {
-	var baseUrl = @"http://www.crosswayknoxville.org";
-	var sermonPageUrl = $@"{baseUrl}/site/audiodownloads.asp?sec_id=180013269";
-	var startPage = 15;
-	var endPage = 16;
+	ExtractBaseSermonData(1).Dump();
+}
+
+List<Sermon> ExtractBaseSermonData(int? startingPage = 1, int? throughPage = null)
+{
 	
+	var sermonListUrl = $@"{BaseUrl}/site/audiodownloads.asp?sec_id=180013269";
+	var sermonPageUrl = $@"{BaseUrl}/site/file.asp?sec_id=180013269&table=file_downloads&file_id=";
+	var startPage = startingPage ?? 1;
+	var endPage = throughPage ?? startPage;
+
 	var allSermons = new List<Sermon>();
-	
+
 	for (var page = startPage; page <= endPage; page++)
 	{
 		var index = (page - 1) * 30;
-		var address = $"{sermonPageUrl}";
+		var address = $"{sermonListUrl}";
 		if (index > 0)
-			address = $"{sermonPageUrl}&index={index}";
-			
+			address = $"{sermonListUrl}&index={index}";
+
 		var htmlDoc = GetPage(address);
 		var sermons = htmlDoc.GetSermonNodes()
-			.Select(node => new Sermon {
+			.Select(node => new Sermon
+			{
+				SermonId = node.GetId(),
 				Title = node.GetTitle(),
 				Date = node.GetDate(),
 				Speaker = node.GetSpeaker(),
 				Text = node.GetScriptureReference(),
-				Mp3Url = node.GetMp3Url(baseUrl)
+				Mp3Url = node.GetMp3Url(BaseUrl)
 			});
 
-		sermons.Dump($"Page {page}: {address}");
 		allSermons.AddRange(sermons);
 	}
+	return allSermons;
 }
 
 HtmlDocument GetPage(string url) 
@@ -48,11 +59,16 @@ HtmlDocument GetPage(string url)
 
 public class Sermon
 {
+	public int SermonId { get; set; }
 	public string Title { get; set; }
 	public string Speaker { get; set; }
 	public DateTime? Date { get; set; }
 	public string Text { get; set; }
 	public string Mp3Url { get; set; }
+	public string Description { get; set; }
+	public string SeriesName { get; set; }
+
+	public string SermonPageUrl => $"/site/file.asp?sec_id=180013269&table=file_downloads&file_id={SermonId}";
 }
 
 public static class ExtensionMethods 
@@ -70,6 +86,19 @@ public static class ExtensionMethods
 	{
 		return htmlDoc.DocumentNode.SelectNodes("//div")
 			.Where(node => node.HasClass("file-item"));
+	}
+	
+	public static int GetId(this HtmlNode sermonNode) 
+	{
+		var id = sermonNode
+			.Descendants("div")
+			.FirstOrDefault()
+			?.Attributes["id"]
+			?.Value;
+			
+		return id == null 
+			? 0
+			: Int32.Parse(id);
 	}
 	
 	// Given the sermon node in the html, find and extract the title
