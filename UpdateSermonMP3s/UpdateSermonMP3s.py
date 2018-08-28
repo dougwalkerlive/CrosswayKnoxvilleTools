@@ -81,6 +81,9 @@ for name in csv_filenames:
 
     # Set the mp3 tags
     setMP3tags(mp3_file, mp3_dict)
+
+    #TODO: Need to go through and strip Scripture references out of the sermon titles
+    #
     nSermons = nSermons + 1
     print
 
