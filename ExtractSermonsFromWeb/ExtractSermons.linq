@@ -17,7 +17,25 @@ void Main()
 	//SaveSermonData(sermonData);
 	
 	var sermonData = LoadSermonData();
-	
+	//sermonData.ForEach(s => ExtractSermonDetails(s));
+	//sermonData.ForEach(s => CleanSpeakerNames(s));
+
+	//SaveSermonData(sermonData);
+
+	sermonData
+		.Where(s => !String.IsNullOrEmpty(s.Speaker))
+		.Select(s => s.Speaker)
+		.Distinct()
+		.OrderBy(s => s)
+		.Dump("Speakers");
+		
+	sermonData
+		.Where(s => !String.IsNullOrWhiteSpace(s.SeriesName))
+		.Select(s => s.SeriesName.Trim())
+		.Distinct()
+		.OrderBy(s => s)
+		.Dump("Series");
+		
 }
 
 List<Sermon> ExtractBaseSermonData(int? startingPage = 1, int? throughPage = null)
@@ -52,6 +70,29 @@ List<Sermon> ExtractBaseSermonData(int? startingPage = 1, int? throughPage = nul
 		allSermons.AddRange(sermons);
 	}
 	return allSermons;
+}
+
+Sermon ExtractSermonDetails(Sermon sermon) 
+{
+	Console.Write($"Processing {sermon.Title}...");
+	var page = GetPage($"{BaseUrl}{sermon.SermonPageUrl}");
+	sermon.SeriesName = page.GetSermonDetailSeries();
+	Console.WriteLine(sermon.SeriesName);
+	
+	return sermon;
+}
+
+Sermon CleanSpeakerNames(Sermon sermon)
+{
+	if (sermon.Speaker == "Greg Picke" 
+		|| sermon.Speaker == "Greg PIckle"
+		|| sermon.Speaker == "What We Teach")
+		sermon.Speaker = "Greg Pickle";
+		
+	if (sermon.Speaker == "Brian Beemer and Doug Walker")
+		sermon.Speaker = "Brian Beemer, Doug Walker";
+		
+	return sermon;
 }
 
 HtmlDocument GetPage(string url) 
@@ -110,6 +151,24 @@ public static class ExtensionMethods
 	{
 		return htmlDoc.DocumentNode.SelectNodes("//div")
 			.Where(node => node.HasClass("file-item"));
+	}
+	
+	public static string GetSermonDetailSeries(this HtmlDocument htmlDoc)
+	{
+		var leftNavNode = htmlDoc.GetElementbyId("file-left");
+		var seriesLink = leftNavNode.Descendants("a")
+			.Where(a => a.Attributes.AttributesWithName("href").FirstOrDefault()?.Value?.Contains("&dlcat") ?? false)
+			.FirstOrDefault();
+			
+		var seriesName = seriesLink?.InnerText;
+		if (seriesName == null) return null;
+		
+		var seriesRegex = new Regex(@"^\<\<\s+(?<seriesName>.*)Series$");
+		var match = seriesRegex.Match(seriesName);
+		if (match != null)
+			seriesName = match.Groups["seriesName"].Value;
+			
+		return seriesName;
 	}
 	
 	public static int GetId(this HtmlNode sermonNode) 
