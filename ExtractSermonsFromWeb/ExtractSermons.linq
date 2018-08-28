@@ -19,7 +19,6 @@ void Main()
 	var sermonData = LoadSermonData();
 	//sermonData.ForEach(s => ExtractSermonDetails(s));
 	//sermonData.ForEach(s => CleanSpeakerNames(s));
-
 	//SaveSermonData(sermonData);
 
 	sermonData
@@ -166,7 +165,7 @@ public static class ExtensionMethods
 		var seriesRegex = new Regex(@"^\<\<\s+(?<seriesName>.*)Series$");
 		var match = seriesRegex.Match(seriesName);
 		if (match != null)
-			seriesName = match.Groups["seriesName"].Value;
+			seriesName = match.Groups["seriesName"].Value?.Trim();
 			
 		return seriesName;
 	}
