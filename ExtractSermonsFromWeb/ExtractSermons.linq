@@ -4,12 +4,20 @@
   <Namespace>HtmlAgilityPack</Namespace>
   <Namespace>Newtonsoft.Json.Serialization</Namespace>
   <Namespace>System.Net</Namespace>
+  <Namespace>Newtonsoft.Json</Namespace>
 </Query>
 
 public string BaseUrl { get; set; } = @"http://www.crosswayknoxville.org";
+public string WorkingFolder { get; set; } = Path.GetDirectoryName(Util.CurrentQueryPath);
+public string FileName { get; set; } = "sermon-data.json";
+
 void Main()
 {
-	ExtractBaseSermonData(1).Dump();
+	//var sermonData = ExtractBaseSermonData(1, 17);
+	//SaveSermonData(sermonData);
+	
+	var sermonData = LoadSermonData();
+	
 }
 
 List<Sermon> ExtractBaseSermonData(int? startingPage = 1, int? throughPage = null)
@@ -55,6 +63,22 @@ HtmlDocument GetPage(string url)
 		htmlDoc.LoadHtml(html);
 		return htmlDoc;
 	}
+}
+
+private void SaveSermonData(IEnumerable<Sermon> sermons) 
+{
+	var json = JsonConvert.SerializeObject(sermons);
+
+	var filename = Path.Combine(WorkingFolder, FileName);
+	File.WriteAllText(filename, json);
+}
+
+private List<Sermon> LoadSermonData()
+{
+	var filename = Path.Combine(WorkingFolder, FileName);
+	var json = File.ReadAllText(filename);
+	
+	return JsonConvert.DeserializeObject<List<Sermon>>(json);
 }
 
 public class Sermon
