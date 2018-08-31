@@ -21,6 +21,8 @@ void Main()
 	//sermonData.ForEach(s => CleanSpeakerNames(s));
 	//SaveSermonData(sermonData);
 
+	sermonData.Count().Dump("Total Sermons");
+	
 	sermonData
 		.Where(s => !String.IsNullOrEmpty(s.Speaker))
 		.Select(s => s.Speaker)
