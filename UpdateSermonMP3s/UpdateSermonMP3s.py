@@ -87,11 +87,14 @@ def main():
         # Download the file and get a handle to it if it is not
         # already in the directory
         mp3_file = getMP3(download_dir, mp3_dict['Mp3Url'])
-        # Set the mp3 tags
-        setMP3tags(mp3_file, mp3_dict)
-      # Skip file if already downloaded
+      # If the file has already been downloaded, simply
+      # get the handle
       else:
         print(filename, " has already been downloaded")
+        mp3_file = eyed3.load(download_dir + '/' + filename)
+
+      # Set the mp3 tags
+      setMP3tags(mp3_file, mp3_dict)
 
       nSermons = nSermons + 1
 
