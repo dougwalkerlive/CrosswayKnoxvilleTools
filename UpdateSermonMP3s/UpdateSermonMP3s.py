@@ -2,7 +2,7 @@
 import os
 import sys
 import csv
-import urllib
+import urllib.request
 import eyed3
 
 # Downloads an mp3, saves in a specified directory, and returns a file handle
@@ -13,7 +13,7 @@ def getMP3(path, URL):
 
   # Download command
   filename_fullpath = path + '/' + filename
-  urllib.urlretrieve(URL, filename_fullpath)
+  urllib.request.urlretrieve(URL, filename_fullpath)
 
   # Get file handle
   file = eyed3.load(filename_fullpath)
@@ -34,60 +34,69 @@ def setMP3tags(file, dictionary):
   file.tag.album_artist = str(dictionary['Speaker'])
   file.tag.album = str(dictionary['SeriesName'])
   file.tag.title = str(dictionary['Title'])
-  file.tag.year = str(dictionary['Date'].split(' ')[0])
-  file.tag.comment = str(mp3_dict['Text'])
-  file.tag.genre = str('Sermon')
+  file.tag.year = str(dictionary['Date'].split('-')[0])
+  file.tag.comment = str(dictionary['Text'])
+  file.tag.track_num = str(dictionary['SeriesIndex\n'])
+  file.tag.genre = 'Sermon'
   file.tag.save()
 
-# Get the filename from the commandline argument
-if len(sys.argv) < 1:
-  print('Need to input a .csv filename as an argument.')
-  exit()
-else:
-  csv_filenames = sys.argv[1:]
+def main():
+  # Get the csv filename from the commandline argument
+  if len(sys.argv) < 2:
+    print('Need to input a .csv filename as an argument.')
+    exit()
+  else:
+    csv_filenames = sys.argv[1:]
 
-# Create the download directory
-download_dir = './mp3_downloads'
-if not os.path.exists(download_dir):
-  os.makedirs(download_dir)
+  # Create the download directory
+  download_dir = './mp3_downloads'
+  if not os.path.exists(download_dir):
+    os.makedirs(download_dir)
 
-# Set the error level to "error" since there will be warnings for every file
-#   - WARNING:eyed3.mp3.headers:Lame tag CRC check failed
-#   - WARNING:eyed3.id3:Non standard genre name: Sermon
-eyed3.log.setLevel("ERROR")
+  # Get list of all files currently in the download directory
+  current_files_list = os.listdir(download_dir)
 
-# Loop over all csv files (probably unnecessary, but trivial to do)
-nSermons = 0
-for name in csv_filenames:
-  print('Processing file "' + name + '"...')
-  file = open(name)
+  # Set the error level to "error" since there will be warnings for every file
+  #   - WARNING:eyed3.mp3.headers:Lame tag CRC check failed
+  #   - WARNING:eyed3.id3:Non standard genre name: Sermon
+  eyed3.log.setLevel("ERROR")
 
-  # Process the header, assumed to contain the following fields:
-  #   SermonID, Title, Speaker, Date, Text, Mp3Url, Description, SeriesName, SermonPageUrl
-  fields = file.readline().split(',')
+  # Loop over all csv files (probably unnecessary, but trivial to do)
+  nSermons = 0
+  for name in csv_filenames:
+    print('Processing file "' + name + '"...')
+    file = open(name)
 
-  # Process the data for each line
-  for line in csv.reader(file):
-    # Skip blank lines - Only happens at the end of the file, so it doesn't really matter,
-    # but the error at the end is still annoying
-    if not line:
-      continue
+    # Process the header, assumed to contain the following fields:
+    #   SermonID, Title, Speaker, Date, Text, Mp3Url, Description, SeriesName, SermonPageUrl, SeriesIndex
+    fields = file.readline().split(',')
 
-    # Convert the line to a dictionary for easy access
-    mp3_dict = dict(zip(fields, line))
+    # Process the data for each line of the csv
+    for line in csv.reader(file):
+      # Skip blank lines - Only happens at the end of the file, so it doesn't really matter,
+      # but the error at the end is still annoying
+      if not line:
+        continue
 
-    # Download the file and get a handle to it
-    mp3_file = getMP3(download_dir, mp3_dict['Mp3Url'])
+      # Convert the line to a dictionary for easy access
+      mp3_dict = dict(zip(fields, line))
 
-    # Set the mp3 tags
-    setMP3tags(mp3_file, mp3_dict)
+      # Check if file has already been downloaded
+      filename = os.path.basename(mp3_dict['Mp3Url'])
+      if filename not in current_files_list:
+        # Download the file and get a handle to it if it is not
+        # already in the directory
+        mp3_file = getMP3(download_dir, mp3_dict['Mp3Url'])
+        # Set the mp3 tags
+        setMP3tags(mp3_file, mp3_dict)
+      # Skip file if already downloaded
+      else:
+        print(filename, " has already been downloaded")
 
-    #TODO: Need to go through and strip Scripture references out of the sermon titles
-    #
-    nSermons = nSermons + 1
+      nSermons = nSermons + 1
 
-# TODO: Would be kind of nifty to go through at the end and set tag.track_num
-#   - Would just need to start at earliest date and count sermons in each series
+  print(str(nSermons) + ' files downloaded and tagged...')
+  print('Sermon tagging complete.')
 
-print(str(nSermons) + ' files downloaded and tagged...')
-print('Sermon tagging complete.')
+if __name__ == '__main__':
+    main()

@@ -3,3 +3,5 @@
 .idea/
 # Don't add the large created data folder to the repo.
 mp3_downloads/
+# Exclude jupyter checkpoints
+.ipynb_checkpoints/
