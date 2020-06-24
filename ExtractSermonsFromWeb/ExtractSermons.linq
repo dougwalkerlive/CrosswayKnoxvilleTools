@@ -13,14 +13,20 @@ public string FileName { get; set; } = "sermon-data.json";
 
 void Main()
 {
-	//var sermonData = ExtractBaseSermonData(1, 17);
-	//SaveSermonData(sermonData);
+	// Extract the data from the website and save.
+	var sermonData = ExtractBaseSermonData(1, 23);
+	SaveSermonData(sermonData);
 	
-	var sermonData = LoadSermonData();
-	//sermonData.ForEach(s => ExtractSermonDetails(s));
-	//sermonData.ForEach(s => CleanSpeakerNames(s));
-	//SaveSermonData(sermonData);
+	// Uncomment the following line and comment out the
+	// above five lines if the json file is already present.
+	// var sermonData = LoadSermonData();
 
+	// Clean the sermon data and save.
+	sermonData.ForEach(s => ExtractSermonDetails(s));
+	sermonData.ForEach(s => CleanSpeakerNames(s));
+	SaveSermonData(sermonData);
+
+	// Print out the results
 	sermonData.Count().Dump("Total Sermons");
 	
 	sermonData

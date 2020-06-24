@@ -9,7 +9,7 @@ import eyed3
 def getMP3(path, URL):
   # Strip the path
   filename = os.path.basename(URL)
-  print 'Downloading "' + filename + '" to "' + path + '"...'
+  print('Downloading "' + filename + '" to "' + path + '"...')
 
   # Download command
   filename_fullpath = path + '/' + filename
@@ -23,25 +23,25 @@ def getMP3(path, URL):
 def setMP3tags(file, dictionary):
   # Strip the path
   filename = os.path.basename(dictionary['Mp3Url'])
-  print 'Adding ID3 tag information to "' + filename + '"...'
+  print('Adding ID3 tag information to "' + filename + '"...')
 
   # Apparently this is a thing that's possible...
   if not file.tag:
     file.initTag()
 
   # Now set the data since we are guaranteed to have a tag
-  file.tag.artist = unicode(dictionary['Speaker'])
-  file.tag.album_artist = unicode(dictionary['Speaker'])
-  file.tag.album =  unicode(dictionary['SeriesName'])
-  file.tag.title =  unicode(dictionary['Title'])
-  file.tag.year = unicode(dictionary['Date'].split(' ')[0])
-  file.tag.comment = unicode(mp3_dict['Text'])
-  file.tag.genre =  unicode('Sermon')
+  file.tag.artist = str(dictionary['Speaker'])
+  file.tag.album_artist = str(dictionary['Speaker'])
+  file.tag.album = str(dictionary['SeriesName'])
+  file.tag.title = str(dictionary['Title'])
+  file.tag.year = str(dictionary['Date'].split(' ')[0])
+  file.tag.comment = str(mp3_dict['Text'])
+  file.tag.genre = str('Sermon')
   file.tag.save()
 
 # Get the filename from the commandline argument
 if len(sys.argv) < 1:
-  print 'Need to input a .csv filename as an argument.'
+  print('Need to input a .csv filename as an argument.')
   exit()
 else:
   csv_filenames = sys.argv[1:]
@@ -59,7 +59,7 @@ eyed3.log.setLevel("ERROR")
 # Loop over all csv files (probably unnecessary, but trivial to do)
 nSermons = 0
 for name in csv_filenames:
-  print 'Processing file "' + name + '"...'
+  print('Processing file "' + name + '"...')
   file = open(name)
 
   # Process the header, assumed to contain the following fields:
@@ -85,10 +85,9 @@ for name in csv_filenames:
     #TODO: Need to go through and strip Scripture references out of the sermon titles
     #
     nSermons = nSermons + 1
-    print
 
 # TODO: Would be kind of nifty to go through at the end and set tag.track_num
 #   - Would just need to start at earliest date and count sermons in each series
 
-print str(nSermons) + ' files downloaded and tagged...'
-print 'Sermon tagging complete.'
+print(str(nSermons) + ' files downloaded and tagged...')
+print('Sermon tagging complete.')

@@ -1,1 +1,5 @@
 *.sublime-*
+# Pycharm
+.idea/
+# Don't add the large created data folder to the repo.
+mp3_downloads/
