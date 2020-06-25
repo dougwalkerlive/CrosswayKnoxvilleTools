@@ -3,17 +3,23 @@ import os
 import sys
 import csv
 import urllib.request
+import urllib.parse
 import eyed3
 
 # Downloads an mp3, saves in a specified directory, and returns a file handle
 def getMP3(path, URL):
-  # Strip the path
+  # Strip the path to get the file name
   filename = os.path.basename(URL)
   print('Downloading "' + filename + '" to "' + path + '"...')
 
+  # Add escape characters to the file name
+  filename_escaped = urllib.parse.quote(filename)
+  # Get the escaped version of the URL
+  url_escaped = URL[:len(URL) - len(filename)] + filename_escaped
+
   # Download command
   filename_fullpath = path + '/' + filename
-  urllib.request.urlretrieve(URL, filename_fullpath)
+  urllib.request.urlretrieve(url_escaped, filename_fullpath)
 
   # Get file handle
   file = eyed3.load(filename_fullpath)
