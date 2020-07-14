@@ -19,10 +19,28 @@ def process_title(title, text):
         if title == text:
             return title
         # If the title is just the text followed by part 1,
-        # part 2, etc just keep the title
+        # part 2, etc just keep the current title
+        elif (title[:len(text)] == text and
+              title[len(text):len(text) + 6] == ", Part" and
+              len(title) == len(text) + 8):
+            return title
+        # If the title is just the text followed by Continued,
+        # just keep the current title
+        elif (title[:len(text)] == text and
+              title[len(text):len(text) + 11] == ", Continued"):
+            return title
+        elif (title[:len(text)] == text and
+              title[len(text):len(text) + 10] == " Continued"):
+            return title
+        # If the title is the text followed by part 1, part 2, etc
+        # but there is also another title, remove both the text
+        # and the part 1, part 2, etc
         elif (title[:len(text)] == text and
               title[len(text):len(text) + 6] == ", Part"):
-            return title
+            new_title = title[len(text) + 8:]
+            # Strip leading characters that are unneeded
+            new_title = new_title.lstrip('-:, ab')
+            return new_title
         # Otherwise, take out text from the title by taking
         # out the first few characters from the title, the
         # number being equivalent to the length of the text

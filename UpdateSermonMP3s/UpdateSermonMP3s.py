@@ -89,9 +89,14 @@ def main():
 
       # Check if file has already been downloaded
       filename = os.path.basename(mp3_dict['Mp3Url'])
+
+      # Skip if file is empty
+      if filename == "":
+        continue
+
+      # Download the file and get a handle to it if it is not
+      # already in the directory
       if filename not in current_files_list:
-        # Download the file and get a handle to it if it is not
-        # already in the directory
         mp3_file = getMP3(download_dir, mp3_dict['Mp3Url'])
       # If the file has already been downloaded, simply
       # get the handle
