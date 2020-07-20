@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import sys
 import numpy as np
+import os
 import pandas as pd
 
 
@@ -52,6 +53,15 @@ def process_title(title, text):
     else:
         return title
 
+def get_file_name(url):
+    """
+    Get the name of the downloaded file from the url, which is
+    simply all the characters after the last backslash
+    :param url: URL of the file online
+    :return: Name of just the file after it gets downloaded
+    """
+    return os.path.basename(url)
+
 def main():
     # Get the filename from the commandline argument
     if len(sys.argv) < 2:
@@ -70,11 +80,18 @@ def main():
     df["SeriesIndex"] = df.groupby("SeriesName")["Date"].rank(method="first", ascending=True)
     df.SeriesIndex = df.SeriesIndex.astype(int)
 
+    # Add column with the name of the downloaded file
+    df["FileName"] = np.vectorize(get_file_name)(df["Mp3Url"])
+
     # Edit the title column to take out the reference
     df["Title"] = np.vectorize(process_title)(df["Title"], df["Text"])
 
     # convert to csv
     df.to_csv("ExtractSermons.csv", index=False)
 
+    # Find and print out duplicate rows
+    print("Duplicate Rows to Fix: ")
+    duplicate_df = df[df.duplicated(subset="Mp3Url")]
+    print(duplicate_df)
 if __name__ == '__main__':
     main()
