@@ -91,7 +91,7 @@ def main():
 
     # Find and print out duplicate rows
     print("Duplicate Rows to Fix: ")
-    duplicate_df = df[df.duplicated(subset="Mp3Url")]
+    duplicate_df = df[df.duplicated(keep=False, subset="Mp3Url")]
     print(duplicate_df)
 if __name__ == '__main__':
     main()
